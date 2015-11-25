@@ -24,22 +24,29 @@ let model_found assign_queue vars =
   (Q.is_empty assign_queue) && 
   ((List.length vars) == (List.length assigned_vars))
 
-let decide vars =
+let decide clauses =
   let get_var tuple = match tuple with
     | (var,_,_) -> var in
   let assigned_vars = List.map get_var !assign in
-  let new_var var = not (List.mem (abs var) assigned_vars) in
-  List.hd (List.filter new_var vars)
+  let new_literal literal = not (List.mem (abs literal) assigned_vars) in
+  List.hd (List.filter new_literal clauses)
 
-let choose_assignment assign_queue vars =
+let choose_assignment assign_queue clauses =
   if (Q.is_empty assign_queue) then begin
-  	let literal = decide vars in
+  	let literal = decide clauses in
   	decision_level := (succ !decision_level);
   	assign := (!assign @ [(literal, !decision_level, false)]);
   end else begin
   	let literal = Q.take assign_queue in
   	assign := (!assign @ [(literal, !decision_level, true)]);
   end
+
+let display_assign assign =
+  let assign_string tuple = match tuple with
+    | (var,lvl,forced) -> if forced
+      then (sprintf "%d, %d, true" var lvl)
+      else (sprintf "%d, %d, false" var lvl) in
+  List.iter (fun t -> (print_endline (assign_string t))) assign
 
 let sat clauses =
   let assign_queue = Q.create () in
@@ -48,7 +55,8 @@ let sat clauses =
   	let vars = List.sort_uniq Pervasives.compare
   	  (List.map abs (List.flatten clauses)) in
   	while (not (model_found assign_queue vars)) do
-  	  choose_assignment assign_queue vars;
+  	  choose_assignment assign_queue (List.flatten clauses);
   	done;
+  	display_assign !assign;
     true
   end else false
