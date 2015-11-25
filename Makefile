@@ -1,0 +1,5 @@
+all:
+	ocamlbuild -no-hygiene -j 0 main.native
+
+clean:
+	ocamlbuild -clean;
