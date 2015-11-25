@@ -24,6 +24,23 @@ let model_found assign_queue vars =
   (Q.is_empty assign_queue) && 
   ((List.length vars) == (List.length assigned_vars))
 
+let decide vars =
+  let get_var tuple = match tuple with
+    | (var,_,_) -> var in
+  let assigned_vars = List.map get_var !assign in
+  let new_var var = not (List.mem (abs var) assigned_vars) in
+  List.hd (List.filter new_var vars)
+
+let choose_assignment assign_queue vars =
+  if (Q.is_empty assign_queue) then begin
+  	let literal = decide vars in
+  	decision_level := (succ !decision_level);
+  	assign := (!assign @ [(literal, !decision_level, false)]);
+  end else begin
+  	let literal = Q.take assign_queue in
+  	assign := (!assign @ [(literal, !decision_level, true)]);
+  end
+
 let sat clauses =
   let assign_queue = Q.create () in
   let pre = preprocess clauses assign_queue in
@@ -31,7 +48,7 @@ let sat clauses =
   	let vars = List.sort_uniq Pervasives.compare
   	  (List.map abs (List.flatten clauses)) in
   	while (not (model_found assign_queue vars)) do
-  	  printf "Infinite loop\n";
+  	  choose_assignment assign_queue vars;
   	done;
     true
   end else false
