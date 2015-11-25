@@ -1,0 +1,12 @@
+# OASIS_START
+# DO NOT EDIT (digest: e56cb51a21b9e49cbfdadb9f5193686b)
+version = "0.0"
+description = "A SAT solver which employs the CDCL resolution procedure"
+requires = "ocamlgraph"
+archive(byte) = "core.cma"
+archive(byte, plugin) = "core.cma"
+archive(native) = "core.cmxa"
+archive(native, plugin) = "core.cmxs"
+exists_if = "core.cma"
+# OASIS_STOP
+

@@ -1,0 +1,41 @@
+Name: CamLogic
+Version: 0.0
+Synopsis: A SAT solver which employs the CDCL resolution procedure
+Authors: 
+  Jay LeCavalier <jay.lecavalier@colorado.edu>
+License: LGPL with OCaml linking exception
+
+Description: CamLogic is a SAT solver
+
+OASISFormat: 0.4
+BuildTools: ocamlbuild
+Plugins: META (0.4), DevFiles (0.4)
+AlphaFeatures: ocamlbuild_more_args
+
+# +-------------------------------------------------------------------+
+# | Libraries                                                         |
+# +-------------------------------------------------------------------+
+
+Library "core"
+  Path: src
+  Modules:
+    Sys_parser,
+    Sys_lexer,
+    ParserUtils,
+    Cdcl
+  BuildTools:
+    ocamllex,
+    camlp4o
+  BuildDepends:
+    ocamlgraph
+
+# +-------------------------------------------------------------------+
+# | Executables                                                       |
+# +-------------------------------------------------------------------+
+
+Executable "satsolver"
+  Path: src
+  MainIs: main.ml
+  CompiledObject: best
+  BuildDepends:
+    ocamlgraph
