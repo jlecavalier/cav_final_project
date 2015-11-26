@@ -1,8 +1,12 @@
 open Printf
+open Graph
 module Q = Queue
 
 let assign : (int * int * bool) list ref = ref []
 let decision_level : int ref = ref 0
+
+module G = Graph.Imperative.Digraph.Concrete(Vertex)
+let implication_graph = G.create ()
 
 let preprocess clauses assign_queue =
   let is_literal c = (List.length c) == 1 in
@@ -26,7 +30,7 @@ let model_found assign_queue vars =
 
 let decide clauses =
   let get_var tuple = match tuple with
-    | (var,_,_) -> var in
+    | (var,_,_) -> (abs var) in
   let assigned_vars = List.map get_var !assign in
   let new_literal literal = not (List.mem (abs literal) assigned_vars) in
   List.hd (List.filter new_literal clauses)
@@ -40,6 +44,10 @@ let choose_assignment assign_queue clauses =
   	let literal = Q.take assign_queue in
   	assign := (!assign @ [(literal, !decision_level, true)]);
   end
+
+let deduce clauses =
+  
+  false
 
 let display_assign assign =
   let assign_string tuple = match tuple with
