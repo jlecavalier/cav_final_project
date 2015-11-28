@@ -2,7 +2,8 @@ open Printf
 open Graph
 module Q = Queue
 
-let assign : (int * int * bool) list ref = ref []
+let assign : (int * int * bool * int list) list ref = ref []
+let implications : (int * int * bool * int list) list ref = ref []
 let decision_level : int ref = ref 0
 
 module G = Graph.Imperative.Digraph.Concrete(Vertex)
@@ -16,7 +17,7 @@ let preprocess clauses assign_queue =
   	let all_vars = List.flatten clauses in
   	let pure l = not (List.mem (-l) all_vars) in
   	let pure_lits = List.filter pure all_vars in
-  	let f l = Q.add l assign_queue in
+  	let f l = Q.add (l, []) assign_queue in
   	List.iter f (List.sort_uniq Pervasives.compare (pure_lits @ literals));
   	true
   end
@@ -39,14 +40,18 @@ let choose_assignment assign_queue clauses =
   if (Q.is_empty assign_queue) then begin
   	let literal = decide clauses in
   	decision_level := (succ !decision_level);
-  	assign := (!assign @ [(literal, !decision_level, false)]);
+  	assign := (!assign @ [(literal, !decision_level, false, [])]);
   end else begin
-  	let literal = Q.take assign_queue in
-  	assign := (!assign @ [(literal, !decision_level, true)]);
+  	let (literal, lst) = Q.take assign_queue in
+  	assign := (!assign @ [(literal, !decision_level, true, lst)]);
   end
 
 let deduce clauses =
-  
+  let get_var tuple = match tuple with
+    | (var,_,_) -> var in
+  let assigned_vars = List.map get_var !implications in
+  let f cs v = List.filter (fun c -> not (List.mem v c)) cs in
+  let clauses' = List.fold_left f clauses assigned_vars in
   false
 
 let display_assign assign =
@@ -64,6 +69,10 @@ let sat clauses =
   	  (List.map abs (List.flatten clauses)) in
   	while (not (model_found assign_queue vars)) do
   	  choose_assignment assign_queue (List.flatten clauses);
+      implications := !assign;
+      while (deduce clauses) do
+        print_endline "Deducing";
+      done;
   	done;
   	display_assign !assign;
     true
