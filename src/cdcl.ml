@@ -7,10 +7,11 @@ let implications : (int * int * bool * int list) list ref = ref []
 let decision_level : int ref = ref 0
 
 let display_assign assign =
+  let do_list lst = String.concat " " (List.map (fun l -> (sprintf "%d" l)) lst) in
   let assign_string tuple = match tuple with
     | (var,lvl,forced,lst) -> if forced
-      then (sprintf "%d, %d, true" var lvl)
-      else (sprintf "%d, %d, false" var lvl) in
+      then (sprintf "%d, %d, true [%s]" var lvl (do_list lst))
+      else (sprintf "%d, %d, false [%s]" var lvl (do_list lst)) in
   List.iter (fun t -> (print_endline (assign_string t))) assign
 
 let in_queue assign_queue var =
@@ -70,7 +71,7 @@ let deduce_clause assign_queue clause =
     end
   end
 
-let rec deduce assign_queue clauses =
+let deduce assign_queue clauses =
   let get_var tuple = match tuple with
     | (var,_,_,_) -> var in
   let assigned_vars = List.map get_var !assign in
@@ -78,15 +79,15 @@ let rec deduce assign_queue clauses =
   List.iter (fun v -> (printf "%d " v)) assigned_vars;
   print_endline "";
   if List.fold_left (fun b l -> (b || (List.mem (-l) assigned_vars))) false assigned_vars
-  then begin
-    (*assign := !implications;*)
-    false
-  end else begin
+  then true else begin
     let f cs v = List.filter (fun c -> not (List.mem v c)) cs in
     let clauses' = List.fold_left f clauses assigned_vars in
     List.iter (fun c -> (deduce_clause assign_queue c)) clauses';
     false
   end
+
+let analyze_conflict clauses = 
+  (clauses, -1)
 
 let sat clauses =
   let assign_queue = Q.create () in
@@ -94,13 +95,17 @@ let sat clauses =
   if pre then begin
   	let vars = List.sort_uniq Pervasives.compare
   	  (List.map abs (List.flatten clauses)) in
-  	while (not (model_found assign_queue vars)) do
+    let maybe_sat = ref true in
+  	while ((not (model_found assign_queue vars)) && !maybe_sat) do
   	  choose_assignment assign_queue (List.flatten clauses);
       implications := !assign;
-      while (deduce assign_queue clauses) do
-        print_endline "Deducing";
+      while ((deduce assign_queue clauses) && !maybe_sat) do
+        let (clauses, blevel) = analyze_conflict clauses in
+        if (blevel < 0) then begin
+          maybe_sat := false;
+        end
       done;
   	done;
   	display_assign !implications;
-    true
+    !maybe_sat;
   end else false
