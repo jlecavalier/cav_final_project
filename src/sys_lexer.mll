@@ -13,6 +13,7 @@ rule lexer = parse
   | "cnf" { LCNF }
   | ['-']?['0'-'9']+ { LVAR (int_of_string (Lexing.lexeme lexbuf)) }
   | eof { LEND }
+  | "%" { LEND }
   | '\n' { incr linenum; lexer lexbuf }
   | _ as x { failwith (sprintf "Error: I don't know what %c means, but I saw it on line %d" x !linenum) }
 

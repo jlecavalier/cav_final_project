@@ -91,11 +91,11 @@ let deduce assign_queue clauses =
   end else begin
     let f cs v = List.filter (fun c -> not (List.mem v c)) cs in
     let clauses' = List.fold_left f clauses assigned_vars in
-    print_endline "Before deduce_clause";
-    display_assign !assign;
+    (*print_endline "Before deduce_clause";
+    display_assign !assign;*)
     List.iter (fun c -> (deduce_clause assign_queue c)) clauses';
-    print_endline "After deduce_clause";
-    display_assign !assign;
+    (*print_endline "After deduce_clause";
+    display_assign !assign;*)
     false
   end
 
@@ -139,6 +139,12 @@ let sat clauses =
         working_clauses := analyze_conflict !working_clauses;
         print_endline "after analyze";
         display_assign !assign;
+        print_endline "And here's the queue.";
+        let p_int_list lst = List.map (fun d -> (sprintf "%d" d)) lst in
+        let q_elt tuple = match tuple with
+        | (v,lst) -> sprintf "%d [%s]" (v) (String.concat " " (p_int_list lst)) in
+        Q.iter (fun x -> (printf "%s" (q_elt x); print_endline "")) assign_queue;
+        Q.clear assign_queue;
         if (!decision_level < 0) then begin
           maybe_sat := false;
         end
