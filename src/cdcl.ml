@@ -3,7 +3,6 @@ open Graph
 module Q = Queue
 
 let assign : (int * int * bool * int list) list ref = ref []
-let implications : (int * int * bool * int list) list ref = ref []
 let decision_level : int ref = ref 0
 
 let display_assign assign =
@@ -18,6 +17,12 @@ let in_queue assign_queue var =
   let f v = match v with
     | (v',_) -> v' in
   Q.fold (fun b v -> b || ((f v) == var)) false assign_queue
+
+let get_data_from_var var =
+  let f tuple = match tuple with
+    | (v,_,_,_) -> (v == var) in
+  assert (List.length (List.filter f !assign) > 0);
+  List.hd (List.filter f !assign)
 
 let preprocess clauses assign_queue =
   let is_literal c = (List.length c) == 1 in
@@ -59,10 +64,11 @@ let choose_assignment assign_queue clauses =
 let deduce_clause assign_queue clause =
   let get_var tuple = match tuple with
     | (var,_,_,_) -> var in
-  let assigned_vars = List.map get_var !implications in
+  let assigned_vars = List.map get_var !assign in
   let f cs var = List.filter (fun c -> not (c == (-var))) cs in
   let d_clause = List.fold_left f clause assigned_vars in
   if ((List.length d_clause) == 1) then begin
+    assert ((List.length d_clause) > 0);
     let literal = List.hd d_clause in
     if (not (in_queue assign_queue literal)) then begin
       let to_negate = List.filter (fun c -> not (c == literal)) clause in
@@ -79,33 +85,64 @@ let deduce assign_queue clauses =
   List.iter (fun v -> (printf "%d " v)) assigned_vars;
   print_endline "";
   if List.fold_left (fun b l -> (b || (List.mem (-l) assigned_vars))) false assigned_vars
-  then true else begin
+  then begin
+    (*display_assign !assign;*)
+    true
+  end else begin
     let f cs v = List.filter (fun c -> not (List.mem v c)) cs in
     let clauses' = List.fold_left f clauses assigned_vars in
+    print_endline "Before deduce_clause";
+    display_assign !assign;
     List.iter (fun c -> (deduce_clause assign_queue c)) clauses';
+    print_endline "After deduce_clause";
+    display_assign !assign;
     false
   end
 
 let analyze_conflict clauses = 
-  (clauses, -1)
+  let get_var tuple = match tuple with
+    | (var,_,_,_) -> var in
+  let assigned_vars = List.map get_var !assign in
+  let is_conflict tuple = List.mem (-(get_var tuple)) assigned_vars in
+  let conflict_vars = List.filter is_conflict !assign in
+  let get_causes tuple = match tuple with
+    | (_,_,_,cause) -> cause in
+  let causes = List.sort_uniq Pervasives.compare
+    (List.flatten (List.map get_causes conflict_vars)) in
+  let get_level tuple = match tuple with
+    | (_,lvl,_,_) -> lvl in
+  let lvls = List.map get_level (List.map get_data_from_var causes) in
+  let blevel = pred (List.hd (List.sort Pervasives.compare lvls)) in
+  if (blevel < 0) then begin 
+    decision_level := -1;
+    [] 
+  end else begin
+    let conflict_clause = List.map (fun v -> -v) causes in
+    decision_level := blevel;
+    assign := List.filter (fun t -> ((get_level t) <= blevel)) !assign;
+    clauses @ [conflict_clause]
+  end
 
 let sat clauses =
+  let working_clauses = ref clauses in
   let assign_queue = Q.create () in
-  let pre = preprocess clauses assign_queue in
+  let pre = preprocess !working_clauses assign_queue in
   if pre then begin
   	let vars = List.sort_uniq Pervasives.compare
-  	  (List.map abs (List.flatten clauses)) in
+  	  (List.map abs (List.flatten !working_clauses)) in
     let maybe_sat = ref true in
   	while ((not (model_found assign_queue vars)) && !maybe_sat) do
-  	  choose_assignment assign_queue (List.flatten clauses);
-      implications := !assign;
-      while ((deduce assign_queue clauses) && !maybe_sat) do
-        let (clauses, blevel) = analyze_conflict clauses in
-        if (blevel < 0) then begin
+  	  choose_assignment assign_queue (List.flatten !working_clauses);
+      while ((deduce assign_queue !working_clauses) && !maybe_sat) do
+        print_endline "before analyze";
+        display_assign !assign;
+        working_clauses := analyze_conflict !working_clauses;
+        print_endline "after analyze";
+        display_assign !assign;
+        if (!decision_level < 0) then begin
           maybe_sat := false;
         end
       done;
   	done;
-  	display_assign !implications;
     !maybe_sat;
   end else false

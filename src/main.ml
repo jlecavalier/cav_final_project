@@ -10,7 +10,7 @@ let parse_file s =
     system lexer lb
   with
   | Parsing.Parse_error -> printf "Syntax error on line number %d\n" !linenum
-  | Failure s -> failwith (sprintf "Failure %s on line number %d\n" s !linenum)
+  (*| Failure s -> failwith (sprintf "Failure %s on line number %d\n" s !linenum*)
 
 let () =
   Arg.parse [ ]
