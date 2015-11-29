@@ -81,9 +81,9 @@ let deduce assign_queue clauses =
   let get_var tuple = match tuple with
     | (var,_,_,_) -> var in
   let assigned_vars = List.map get_var !assign in
-  print_endline "From deduce:";
+  (*print_endline "From deduce:";
   List.iter (fun v -> (printf "%d " v)) assigned_vars;
-  print_endline "";
+  print_endline "";*)
   if List.fold_left (fun b l -> (b || (List.mem (-l) assigned_vars))) false assigned_vars
   then begin
     (*display_assign !assign;*)
@@ -134,21 +134,23 @@ let sat clauses =
   	while ((not (model_found assign_queue vars)) && !maybe_sat) do
   	  choose_assignment assign_queue (List.flatten !working_clauses);
       while ((deduce assign_queue !working_clauses) && !maybe_sat) do
-        print_endline "before analyze";
-        display_assign !assign;
+        (*print_endline "before analyze";
+        display_assign !assign;*)
         working_clauses := analyze_conflict !working_clauses;
-        print_endline "after analyze";
+        (*print_endline "after analyze";
         display_assign !assign;
         print_endline "And here's the queue.";
         let p_int_list lst = List.map (fun d -> (sprintf "%d" d)) lst in
         let q_elt tuple = match tuple with
         | (v,lst) -> sprintf "%d [%s]" (v) (String.concat " " (p_int_list lst)) in
-        Q.iter (fun x -> (printf "%s" (q_elt x); print_endline "")) assign_queue;
+        Q.iter (fun x -> (printf "%s" (q_elt x); print_endline "")) assign_queue;*)
         Q.clear assign_queue;
         if (!decision_level < 0) then begin
           maybe_sat := false;
         end
       done;
   	done;
+    assign := [];
+    decision_level := 0;
     !maybe_sat;
   end else false

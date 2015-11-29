@@ -17,8 +17,8 @@
 system: properties clauses LEND { 
 	let clauses = ParserUtils.check_properties $1 $2 in
 	let s = ParserUtils.do_sat clauses in
-	let _ = if s then (printf "\n\nSATISFIABLE\n\n")
-	  else (printf "\n\nUNSATISFIABLE\n\n") in
+	let _ = if s then (printf "\nSATISFIABLE\n\n")
+	  else (printf "\nUNSATISFIABLE\n\n") in
 	()
 }
 ;
