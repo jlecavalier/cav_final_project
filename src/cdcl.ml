@@ -1,9 +1,14 @@
 open Printf
 open Graph
+module H = Hashtbl
 module Q = Queue
 
 let assign : (int * int * bool * int list) list ref = ref []
 let decision_level : int ref = ref 0
+let implication_graph : ((int * int * bool), int list) H.t = H.create 100
+
+let get_var tuple = match tuple with
+  | (var,_,_,_) -> var
 
 let display_assign assign =
   let do_list lst = String.concat " " (List.map (fun l -> (sprintf "%d" l)) lst) in
@@ -96,6 +101,18 @@ let deduce assign_queue clauses =
     List.iter (fun c -> (deduce_clause assign_queue c)) clauses';
     (*print_endline "After deduce_clause";
     display_assign !assign;*)
+    false
+  end
+
+let deduce' assign_queue clauses =
+  let assigned_vars = List.map get_var !assign in
+  if List.fold_left (fun b l -> (b || (List.mem (-l) assigned_vars))) false assigned_vars
+  then begin
+    true
+  end else begin
+    let f cs v = List.filter (fun c -> not (List.mem v c)) cs in
+    let clauses' = List.fold_left f clauses assigned_vars in
+    List.iter (fun c -> (deduce_clause assign_queue c)) clauses';
     false
   end
 
