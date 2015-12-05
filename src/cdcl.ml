@@ -5,7 +5,7 @@ module Q = Queue
 
 let assign : (int * int * bool * int list) list ref = ref []
 let decision_level : int ref = ref 0
-let implication_graph : ((int * int * bool), int list) H.t = H.create 100
+let implications : ((int * int * bool), int list) H.t = H.create 100
 
 let get_var tuple = match tuple with
   | (var,_,_,_) -> var
@@ -43,15 +43,11 @@ let preprocess clauses assign_queue =
   end
 
 let model_found assign_queue vars =
-  let get_var tuple = match tuple with
-    | (var,_,_,_) -> var in
   let assigned_vars = List.map get_var !assign in
   (Q.is_empty assign_queue) && 
   ((List.length vars) == (List.length assigned_vars))
 
 let decide clauses =
-  let get_var tuple = match tuple with
-    | (var,_,_,_) -> (abs var) in
   let assigned_vars = List.map get_var !assign in
   let new_literal literal = not (List.mem (abs literal) assigned_vars) in
   List.hd (List.filter new_literal clauses)
@@ -60,9 +56,11 @@ let choose_assignment assign_queue clauses =
   if (Q.is_empty assign_queue) then begin
   	let literal = decide clauses in
   	decision_level := (succ !decision_level);
+    H.replace implications (literal, !decision_level, false) [];
   	assign := (!assign @ [(literal, !decision_level, false, [])]);
   end else begin
   	let (literal, lst) = Q.take assign_queue in
+    H.replace implications (literal, !decision_level, true) [];
   	assign := (!assign @ [(literal, !decision_level, true, lst)]);
   end
 
@@ -83,28 +81,6 @@ let deduce_clause assign_queue clause =
   end
 
 let deduce assign_queue clauses =
-  let get_var tuple = match tuple with
-    | (var,_,_,_) -> var in
-  let assigned_vars = List.map get_var !assign in
-  (*print_endline "From deduce:";
-  List.iter (fun v -> (printf "%d " v)) assigned_vars;
-  print_endline "";*)
-  if List.fold_left (fun b l -> (b || (List.mem (-l) assigned_vars))) false assigned_vars
-  then begin
-    (*display_assign !assign;*)
-    true
-  end else begin
-    let f cs v = List.filter (fun c -> not (List.mem v c)) cs in
-    let clauses' = List.fold_left f clauses assigned_vars in
-    (*print_endline "Before deduce_clause";
-    display_assign !assign;*)
-    List.iter (fun c -> (deduce_clause assign_queue c)) clauses';
-    (*print_endline "After deduce_clause";
-    display_assign !assign;*)
-    false
-  end
-
-let deduce' assign_queue clauses =
   let assigned_vars = List.map get_var !assign in
   if List.fold_left (fun b l -> (b || (List.mem (-l) assigned_vars))) false assigned_vars
   then begin
