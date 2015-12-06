@@ -25,8 +25,6 @@ Library "core"
   BuildTools:
     ocamllex,
     camlp4o
-  BuildDepends:
-    ocamlgraph
 
 # +-------------------------------------------------------------------+
 # | Executables                                                       |
@@ -36,5 +34,3 @@ Executable "satsolver"
   Path: src
   MainIs: main.ml
   CompiledObject: best
-  BuildDepends:
-    ocamlgraph

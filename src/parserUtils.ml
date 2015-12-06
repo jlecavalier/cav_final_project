@@ -3,6 +3,7 @@ open Cdcl
 
 let linenum : int ref = ref 1
 
+(* Extract the information from the parser into clauses *)
 let rec ints_to_clauses clauses clause l =
   match l with
   | [] -> clauses
@@ -22,6 +23,8 @@ let check_num_variables clauses num_vars =
   let unique_vars = List.sort_uniq Pervasives.compare vars in
   (List.length unique_vars) == num_vars
 
+(* Verify that the user gave us the number of variables and clauses
+   he/she said she would in the spec file. *)
 let check_properties p c =
   let num_vars = List.nth p 0 in
   let num_clauses = List.nth p 1 in
@@ -35,4 +38,5 @@ let check_properties p c =
   assert (check_num_variables clauses num_vars);
   clauses
 
+(* Solve SAT! *)
 let do_sat clauses = Cdcl.sat clauses
