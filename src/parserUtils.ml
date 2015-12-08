@@ -2,6 +2,7 @@ open Printf
 open Cdcl
 
 let linenum : int ref = ref 1
+let results : Pervasives.out_channel = open_out "time_results.dat"
 
 (* Extract the information from the parser into clauses *)
 let rec ints_to_clauses clauses clause l =
@@ -39,4 +40,11 @@ let check_properties p c =
   clauses
 
 (* Solve SAT! *)
-let do_sat clauses = Cdcl.sat clauses
+let do_sat clauses = 
+  let t = Sys.time() in
+  let is_sat = Cdcl.sat clauses in
+  let runtime = Sys.time() -. t in
+  let runtime_string = Printf.sprintf "%f\n" runtime in
+  output_string results runtime_string;
+  Printf.printf "Found solution in %f seconds\n" (runtime);
+  is_sat
